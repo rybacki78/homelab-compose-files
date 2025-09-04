@@ -1,0 +1,41 @@
+---
+services:
+  traefik:
+    image: docker.io/library/traefik:v3.5.1
+    container_name: traefik
+    command:
+      - --providers.docker=true
+      - --providers.docker.exposedbydefault=false
+      - --providers.docker.network=traefik_network
+      - --entrypoints.web.address=:80
+      - --entrypoints.web.http.redirections.entryPoint.to=websecure
+      - --entrypoints.web.http.redirections.entryPoint.scheme=https
+      - --entrypoints.web.http.redirections.entryPoint.permanent=true
+      - --entrypoints.websecure.address=:443
+      - --certificatesresolvers.cloudflare.acme.email=${ACME_EMAIL}
+      - --certificatesresolvers.cloudflare.acme.storage=/var/traefik/certs/acme.json
+      - --certificatesresolvers.cloudflare.acme.dnschallenge=true
+      - --certificatesresolvers.cloudflare.acme.dnschallenge.provider=cloudflare
+      - --api.dashboard=true
+      - --api.insecure=true  
+     #- --log.level=DEBUG
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ${EXPOSED_DATA}/traefik/config/:/etc/traefik/:ro
+      - ${EXPOSED_DATA}/traefik/certs/:/var/traefik/certs/:rw
+    environment:
+      - CF_DNS_API_TOKEN=${CF_DNS_API_TOKEN}
+    dns:
+      - ${EXPOSED_DNS}
+    networks:
+      internal_network: {}
+      exposed_macvlan:
+        ipv4_address: ${TRAEFIK_IP}
+    restart: unless-stopped
+
+networks:
+  internal_network:
+    driver: bridge
+    internal: true
+  exposed_macvlan:
+    external: true
