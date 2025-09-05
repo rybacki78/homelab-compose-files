@@ -1,1 +1,3 @@
 .env
+
+exposed/traefik/config/allowlist.runtime.yml

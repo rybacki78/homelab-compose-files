@@ -1,0 +1,34 @@
+services:
+  vaultwarden:
+    image: vaultwarden/server:1.34.3
+    container_name: vaultwarden
+    volumes:
+      - ${EXPOSED_DATA}/vaultwarden/data:/data
+    environment:
+      - WEBSOCKET_ENABLED=true
+      - SIGNUPS_ALLOWED=false
+      - ADMIN_TOKEN=${VAULT_ADMIN_TOKEN}
+      - DOMAIN=${VAULT_DOMAIN}
+      - TZ=${TZ}
+    networks:
+      - traefik_internal
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=traefik_internal
+      - traefik.http.routers.vaultwarden-https.tls=true
+      - traefik.http.routers.vaultwarden-https.tls.certresolver=cloudflare
+      - traefik.http.routers.vaultwarden-https.entrypoints=websecure
+      - traefik.http.routers.vaultwarden-https.rule=host(`${VAULT_HOST}`)
+      - traefik.http.services.vaultwarden-https.loadbalancer.server.port=80
+      # block admin panel from outside networks
+      - traefik.http.routers.vaultwarden-https-admin.tls=true
+      - traefik.http.routers.vaultwarden-https-admin.tls.certresolver=cloudflare
+      - traefik.http.routers.vaultwarden-https-admin.entrypoints=websecure
+      - traefik.http.routers.vaultwarden-https-admin.rule=host(`${VAULT_HOST}`) && pathprefix(`/admin`)
+      - traefik.http.routers.vaultwarden-https-admin.middlewares=home-wan-only@file
+    restart: unless-stopped
+
+networks:
+  traefik_internal:
+    name: traefik_internal
+    external: true

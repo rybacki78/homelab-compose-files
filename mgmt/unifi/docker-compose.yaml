@@ -13,7 +13,7 @@ services:
       - ${MGMT_DATA}/unifi/db/data:/data/db
       - ./init-mongo.sh:/docker-entrypoint-initdb.d/init-mongo.sh:ro
     networks:
-      - internal_network
+      - unifi_internal
     restart: unless-stopped
 
   unifi-network-application:
@@ -32,14 +32,15 @@ services:
     volumes:
       - ${MGMT_DATA}/unifi/app/config:/config
     networks:
-      internal_network: {}
+      unifi_internal: {}
       mgmt_macvlan:
         ipv4_address: ${UNIFI_IP}
     restart: unless-stopped
 
 networks:
-  internal_network:
+  unifi_internal:
     driver: bridge
+    name: unifi_internal
     internal: true
 
   mgmt_macvlan:
